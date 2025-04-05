@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Legal Assistant</h2>
+            </div>
+            <div class="profile-section">
+                <img src="https://placehold.co/100" alt="Profile Picture" class="profile-pic">
+                <h3>Profile Details</h3>
+                <p class="profile-detail">Name: John Doe</p>
+                <p class="profile-detail">Email: john@example.com</p>
+            </div>
+            <div class="sidebar-options">
+                <button class="sidebar-btn" id="new-chat-btn">
+                    <i class="fas fa-plus-circle"></i> New Chat
+                </button>
+                <button class="sidebar-btn" id="history-btn">
+                    <i class="fas fa-history"></i> History
+                </button>
+                <button class="sidebar-btn" id="create-docs-btn">
+                    <i class="fas fa-file-alt"></i> Create Documents
+                </button>
+                <button class="sidebar-btn" id="analyse-docs-btn">
+                    <i class="fas fa-search"></i> Analyse Docs
+                </button>
+                <button class="sidebar-btn active" id="custom-query-btn">
+                    <i class="fas fa-question-circle"></i> Custom Query
+                </button>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="chat-container">
+                <div class="chat-history" id="chat-history">
+                    <div class="chat-message assistant">
+                        <div class="message-content">
+                            <p>Hello! I'm your Legal Assistant. How can I help you today?</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-container">
+                    <textarea id="user-input" placeholder="Ask me anything about legal matters..."></textarea>
+                    <button id="send-btn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 
