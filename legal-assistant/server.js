@@ -1,8 +1,11 @@
+// Load environment variables
+require('dotenv').config();
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const cors = require('cors');
-const openaiService = require('./openai-service');
+const ollamaService = require('./ollama-service');
 const config = require('./config');
 
 // Initialize express app
@@ -53,7 +56,7 @@ app.get('/', (req, res) => {
 app.post('/api/query', async (req, res) => {
     const { query, mode } = req.body;
     
-    // Handle history mode separately as it doesn't need OpenAI
+    // Handle history mode separately as it doesn't need Ollama
     if (mode === 'history') {
         const historyResponse = {
             message: "Here are your previous conversations:",
@@ -70,10 +73,10 @@ app.post('/api/query', async (req, res) => {
     try {
         console.log(`Processing ${mode} query: "${query && query.substring(0, 50)}${query && query.length > 50 ? '...' : ''}"`);
         
-        // Process the query through OpenAI
-        const response = await openaiService.processQuery(query, mode);
+        // Process the query through Ollama
+        const response = await ollamaService.processQuery(query, mode);
         
-        console.log('OpenAI API response received successfully');
+        console.log('Ollama API response received successfully');
         
         // Send the response with a slight delay for a more natural feel
         setTimeout(() => {
@@ -102,17 +105,39 @@ app.post('/api/query', async (req, res) => {
     }
 });
 
-// Endpoint to check API connection
+// Endpoint to check Ollama connection
 app.get('/api/health', async (req, res) => {
-    res.json({
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        server: 'Legal Assistant API',
-        version: '1.0.1'
-    });
+    try {
+        // Try to connect to the Ollama API
+        const response = await fetch(`${config.ollamaConfig.endpoint}/api/tags`);
+        const data = await response.json();
+        
+        res.json({
+            status: 'ok',
+            timestamp: new Date().toISOString(),
+            server: 'Legal Assistant API',
+            version: '1.0.2',
+            ollama: {
+                connected: true,
+                models: data.models ? data.models.map(m => m.name) : []
+            }
+        });
+    } catch (error) {
+        res.json({
+            status: 'warning',
+            timestamp: new Date().toISOString(),
+            server: 'Legal Assistant API',
+            version: '1.0.2',
+            ollama: {
+                connected: false,
+                error: error.message
+            },
+            message: 'Ollama connection failed. Using fallback responses.'
+        });
+    }
 });
 
-// Function to generate a fallback response if OpenAI fails
+// Function to generate a fallback response if Ollama fails
 function generateFallbackResponse(query, mode) {
     query = (query || '').toLowerCase();
     
@@ -142,6 +167,7 @@ const server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Open your browser and navigate to: http://localhost:${PORT}`);
     console.log(`API Health check: http://localhost:${PORT}/api/health`);
+    console.log(`Make sure Ollama is running locally at: ${config.ollamaConfig.endpoint}`);
 }).on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
         console.error(`Port ${PORT} is already in use. Trying port ${PORT + 1}...`);
@@ -150,6 +176,7 @@ const server = app.listen(PORT, () => {
             console.log(`Server is now running on port ${newPort}`);
             console.log(`Open your browser and navigate to: http://localhost:${newPort}`);
             console.log(`API Health check: http://localhost:${newPort}/api/health`);
+            console.log(`Make sure Ollama is running locally at: ${config.ollamaConfig.endpoint}`);
         });
     } else {
         console.error('Server error:', err);

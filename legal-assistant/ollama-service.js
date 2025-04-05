@@ -2,7 +2,7 @@ const axios = require('axios');
 const config = require('./config');
 
 /**
- * Process user query through OpenAI API
+ * Process user query through Ollama AI
  * @param {string} query - User's query text
  * @param {string} mode - The current chat mode (custom-query, new-chat, create-docs, analyse-docs)
  * @returns {Promise<string>} - The AI generated response
@@ -15,48 +15,45 @@ async function processQuery(query, mode) {
         // Combine the base prompt with the user's query
         const systemPrompt = basePrompt.replace('USER QUERY: ', '');
         
-        // Create request body for OpenAI API
+        // Create full API URL
+        const apiUrl = `${config.ollamaConfig.endpoint}${config.ollamaConfig.apiPath}`;
+        
+        // Create request body for Ollama API
         const requestBody = {
-            model: config.model,
+            model: config.ollamaConfig.model,
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: query }
             ],
-            max_tokens: config.maxTokens,
-            temperature: config.temperature,
+            options: {
+                temperature: config.temperature
+            }
         };
 
-        console.log(`Sending request to OpenAI API (${config.model}): ${config.apiConfig.endpoint}`);
+        console.log(`Sending request to Ollama API (${config.ollamaConfig.model}): ${apiUrl}`);
         
-        // Check if API key is available
-        if (!config.openaiApiKey) {
-            console.warn('No OpenAI API key provided. Using fallback responses.');
-            throw new Error('API key is missing');
-        }
-        
-        // Make the API request to OpenAI API directly
+        // Make the API request to Ollama API
         const response = await axios({
             method: 'post',
-            url: config.apiConfig.endpoint,
-            headers: config.apiConfig.headers,
+            url: apiUrl,
+            headers: {
+                'Content-Type': 'application/json'
+            },
             data: requestBody
         });
         
-        // Log success but not the entire response (which might be large)
-        console.log('Received successful response from OpenAI API');
+        // Log success but not the entire response
+        console.log('Received successful response from Ollama API');
         
         // Extract and return the generated text
-        if (response.data && 
-            response.data.choices && 
-            response.data.choices.length > 0 && 
-            response.data.choices[0].message) {
-            return response.data.choices[0].message.content.trim();
+        if (response.data && response.data.message && response.data.message.content) {
+            return response.data.message.content.trim();
         } else {
             console.error('Unexpected response structure:', JSON.stringify(response.data));
             return "I received a response but couldn't interpret it correctly. Please try again.";
         }
     } catch (error) {
-        console.error('Error calling OpenAI API:', error.message);
+        console.error('Error calling Ollama API:', error.message);
         
         // More detailed error logging
         if (error.response) {
@@ -67,10 +64,10 @@ async function processQuery(query, mode) {
         } else if (error.request) {
             // Request was made but no response received
             console.error('No response received:', error.request);
-            return "I apologize, but I didn't receive a response from my knowledge service. Please try again later.";
+            return "I apologize, but I didn't receive a response from my knowledge service. Please ensure Ollama is running on your machine.";
         } else {
             // Something else caused the error
-            return "I apologize, but I encountered an error processing your request. Please try again later.";
+            return "I apologize, but I encountered an error processing your request. Please check if Ollama is properly installed and running.";
         }
     }
 }

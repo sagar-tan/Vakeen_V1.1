@@ -14,11 +14,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Chat history storage (simple in-memory storage for demo)
     let sessionHistory = [];
+    
+    // AI connection status
+    let aiConnectionStatus = 'unknown';
 
     // Initialize
     initializeApp();
 
     function initializeApp() {
+        // Check Ollama connection first
+        checkOllamaConnection();
+        
         // Set event listeners
         userInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -47,6 +53,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Set Custom Query as the default active mode
         document.getElementById('custom-query-btn').classList.add('active');
+    }
+    
+    function checkOllamaConnection() {
+        fetch(`${BASE_URL}/api/health`)
+            .then(response => response.json())
+            .then(data => {
+                aiConnectionStatus = data.status;
+                
+                if (data.status !== 'ok' || (data.ollama && !data.ollama.connected)) {
+                    addSystemMessage("Note: Ollama is not running or not connected. Using built-in responses instead of AI. Please install Ollama to use AI features.");
+                }
+            })
+            .catch(error => {
+                console.error('Error checking AI connection:', error);
+                aiConnectionStatus = 'error';
+                addSystemMessage("Warning: Unable to check AI connection status. Some features might be limited.");
+            });
     }
 
     function handleModeChange(mode) {
@@ -131,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // If this is a fallback response, show an indication
                 if (data.isFallback) {
-                    addSystemMessage("Note: I'm currently using my local knowledge base due to connectivity issues.");
+                    addSystemMessage("Note: Using built-in knowledge base responses because Ollama is not available.");
                 }
             }
         })
