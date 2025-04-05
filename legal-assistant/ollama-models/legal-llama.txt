@@ -1,4 +1,4 @@
-FROM llama2
+FROM mistral
 
 # Legal Assistant specialization
 SYSTEM """
@@ -28,6 +28,6 @@ Remember that legal systems vary by jurisdiction, so indicate when answers might
 PARAMETER temperature 0.5
 
 # Model name and description
-# Run in terminal: ollama create legal-llama -f ./ollama-models/legal-llama.txt
-NAME "legal-llama"
-DESCRIPTION "A specialized version of Llama fine-tuned for legal assistance and document analysis" 
+# Run in terminal: ollama create legal-mistral -f ./ollama-models/legal-llama.txt
+NAME "legal-mistral"
+DESCRIPTION "A specialized version of Mistral fine-tuned for legal assistance and document analysis" 

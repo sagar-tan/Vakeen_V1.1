@@ -10,7 +10,20 @@ if ! curl -s http://localhost:11434/api/tags > /dev/null; then
     echo "Ollama does not appear to be running."
     echo
     echo "Please make sure Ollama is installed and running."
-    echo "See ollama-setup.md for installation instructions."
+    echo
+    echo "If you haven't installed Ollama yet, run ./setup-ollama.sh first."
+    echo
+    echo "Press Enter to exit..."
+    read
+    exit 1
+fi
+
+# Check if mistral model is installed
+echo "Checking if Mistral model is installed..."
+if ! curl -s http://localhost:11434/api/tags | grep -q "mistral"; then
+    echo "Mistral model is not installed."
+    echo
+    echo "Please run ./setup-ollama.sh to install the Mistral model."
     echo
     echo "Press Enter to exit..."
     read

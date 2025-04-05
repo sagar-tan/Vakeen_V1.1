@@ -10,7 +10,21 @@ if %ERRORLEVEL% neq 0 (
     echo Ollama does not appear to be running.
     echo.
     echo Please make sure Ollama is installed and running.
-    echo See ollama-setup.md for installation instructions.
+    echo.
+    echo If you haven't installed Ollama yet, run setup-ollama.bat first.
+    echo.
+    echo Press any key to exit...
+    pause > nul
+    exit /b 1
+)
+
+REM Check if mistral model is installed
+echo Checking if Mistral model is installed...
+curl -s http://localhost:11434/api/tags | findstr mistral > nul
+if %ERRORLEVEL% neq 0 (
+    echo Mistral model is not installed.
+    echo.
+    echo Please run setup-ollama.bat to install the Mistral model.
     echo.
     echo Press any key to exit...
     pause > nul

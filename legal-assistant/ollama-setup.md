@@ -1,22 +1,25 @@
 # Setting Up Ollama for Legal Assistant
 
-This guide will help you set up Ollama to run Llama locally for the Legal Assistant application.
+**IMPORTANT: You MUST install Ollama before using this application!**
 
-## Why Ollama?
+This guide will help you set up Ollama to run AI models locally for the Legal Assistant application.
 
-Ollama provides a simple way to run powerful large language models (like Llama) locally on your machine without:
+## What is Ollama?
+
+Ollama is an application that lets you run powerful AI models on your own computer without:
 - API keys
 - Usage fees
 - Sending your data to third-party services
 
 ## Installation Instructions
 
-### Step 1: Install Ollama
+### Step 1: Install Ollama (REQUIRED)
 
 #### Windows
 1. Download the installer from the [Ollama website](https://ollama.ai/download)
 2. Run the installer and follow the instructions
-3. Once installed, Ollama will run as a background service on `http://localhost:11434`
+3. Restart your computer after installation
+4. The Ollama service should start automatically
 
 #### macOS
 1. Download from [Ollama website](https://ollama.ai/download)
@@ -28,38 +31,34 @@ Ollama provides a simple way to run powerful large language models (like Llama) 
 curl -fsSL https://ollama.ai/install.sh | sh
 ```
 
-### Step 2: Download the Llama2 Model
+### Step 2: Download the Mistral Model (REQUIRED)
 
 Once Ollama is installed, open a terminal/command prompt and run:
 
 ```bash
-ollama pull llama2
+ollama pull mistral
 ```
 
-This will download the Llama2 model (~4GB). You can also try smaller models:
-- `ollama pull llama2:7b` (smaller version)
-- `ollama pull mistral` (alternative model if Llama is too resource-intensive)
+This will download the Mistral model (approximately 4GB). The download might take some time depending on your internet connection.
 
-### Step 3: Test Ollama
+### Step 3: Test Ollama Works
 
 Verify Ollama is working by running:
 
 ```bash
-ollama run llama2 "What is a legal contract?"
+ollama run mistral "Hello, how are you?"
 ```
 
-You should see a detailed response about legal contracts.
+You should see a conversational response. If you get any errors, see the troubleshooting section below.
 
 ## Configuration for Legal Assistant
 
-The Legal Assistant app is already configured to use Ollama with the following settings in the `.env` file:
+The Legal Assistant app is configured to use Ollama with the following settings in the `.env` file:
 
 ```
 OLLAMA_ENDPOINT=http://localhost:11434
-OLLAMA_MODEL=llama2
+OLLAMA_MODEL=mistral
 ```
-
-If you installed a different model, update the `OLLAMA_MODEL` value to match that model name.
 
 ## Running the Legal Assistant with Ollama
 
@@ -73,36 +72,45 @@ If you installed a different model, update the `OLLAMA_MODEL` value to match tha
 
 ## Troubleshooting
 
-### Ollama Not Connecting
-If you see "Ollama is not running or not connected" in the Legal Assistant:
+### Ollama Not Installed or Not Found
+If the diagnostic tool shows Ollama is not installed:
+1. Download and install Ollama from [ollama.ai/download](https://ollama.ai/download)
+2. On Windows, make sure to restart your computer after installation
+3. Run the diagnostic tool again: `node diagnose-ollama.js`
 
-1. Check if Ollama is running:
-   ```bash
-   curl http://localhost:11434/api/tags
-   ```
-   You should see a JSON response with available models.
+### Ollama Installed But Not Running
+If Ollama is installed but not running:
 
-2. If no response, restart Ollama:
-   - Windows: Restart the Ollama service in Windows Services
-   - macOS: Quit and restart the Ollama app
-   - Linux: `sudo systemctl restart ollama`
+#### Windows
+1. Check if the Ollama service is running:
+   - Press Win+R, type `services.msc` and press Enter
+   - Look for "Ollama" in the list
+   - If it's not running, right-click and select "Start"
+
+#### macOS
+1. Check if the Ollama app is running in the menu bar
+2. If not, open Ollama from the Applications folder
+
+#### Linux
+1. Start Ollama: `sudo systemctl start ollama`
+2. Check status: `sudo systemctl status ollama`
+
+### Model Not Found
+If the diagnostic tool shows the model is not available:
+1. Make sure to run: `ollama pull mistral`
+2. Wait for the download to complete
+3. Run the diagnostic tool again
 
 ### Hardware Requirements
 
-Llama models require significant resources:
-- **llama2**: 8GB+ RAM recommended
-- **llama2:7b**: 4GB+ RAM
-- **mistral**: 4GB+ RAM
+AI models require significant resources:
+- 8GB+ RAM recommended
+- 4GB+ free disk space
 
-If your system struggles, try a smaller model and update the `.env` file accordingly.
+If your system struggles, try closing other applications while using the Legal Assistant.
 
-## Advanced: Using Different Models
+## Getting Help
 
-To use a different model:
-1. Pull the model: `ollama pull modelname`
-2. Update the `.env` file: `OLLAMA_MODEL=modelname`
-3. Restart the Legal Assistant server
-
-## Available Models
-
-Run `ollama list` to see available models on your system, or visit [Ollama Library](https://ollama.ai/library) for a list of available models you can download. 
+If you continue to have issues:
+1. Visit [Ollama GitHub Issues](https://github.com/ollama/ollama/issues)
+2. Join the [Ollama Discord Community](https://discord.gg/ollama) 
