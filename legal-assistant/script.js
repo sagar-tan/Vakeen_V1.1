@@ -16,14 +16,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let sessionHistory = [];
     
     // AI connection status
-    let aiConnectionStatus = 'unknown';
+    let apiConnectionStatus = 'unknown';
 
     // Initialize
     initializeApp();
 
     function initializeApp() {
-        // Check Ollama connection first
-        checkOllamaConnection();
+        // Check Gemini API connection first
+        checkAPIConnection();
         
         // Set event listeners
         userInput.addEventListener('keydown', (e) => {
@@ -55,20 +55,24 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('custom-query-btn').classList.add('active');
     }
     
-    function checkOllamaConnection() {
+    function checkAPIConnection() {
         fetch(`${BASE_URL}/api/health`)
             .then(response => response.json())
             .then(data => {
-                aiConnectionStatus = data.status;
+                apiConnectionStatus = data.status;
                 
-                if (data.status !== 'ok' || (data.ollama && !data.ollama.connected)) {
-                    addSystemMessage("Note: Ollama is not running or not connected. Using built-in responses instead of AI. Please install Ollama to use AI features.");
+                if (data.status !== 'ok') {
+                    if (!data.gemini || !data.gemini.configured) {
+                        addSystemMessage("Note: Gemini API key is not configured properly. Please add a valid API key in the .env file.");
+                    } else {
+                        addSystemMessage("Warning: API connection issue. Some features might be limited.");
+                    }
                 }
             })
             .catch(error => {
-                console.error('Error checking AI connection:', error);
-                aiConnectionStatus = 'error';
-                addSystemMessage("Warning: Unable to check AI connection status. Some features might be limited.");
+                console.error('Error checking API connection:', error);
+                apiConnectionStatus = 'error';
+                addSystemMessage("Warning: Unable to check API connection status. Some features might be limited.");
             });
     }
 
@@ -154,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // If this is a fallback response, show an indication
                 if (data.isFallback) {
-                    addSystemMessage("Note: Using built-in knowledge base responses because Ollama is not available.");
+                    addSystemMessage("Note: Using built-in knowledge base responses because Gemini API is not available.");
                 }
             }
         })

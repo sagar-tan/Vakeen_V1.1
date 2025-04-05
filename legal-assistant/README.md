@@ -1,64 +1,55 @@
 # Legal Assistant
 
-An AI-powered legal assistant that provides information, answers questions, and helps with legal document preparation. This application runs locally using Ollama, providing privacy and no usage fees.
+An AI-powered legal assistant that provides information, answers questions, and helps with legal document preparation. This application uses Google's Gemini API for intelligent responses.
 
 ## Quick Start Setup
 
 ### Windows Users
 
-1. Run `setup-ollama.bat` to install Ollama and set up the necessary model
-2. Follow the on-screen instructions
-3. The setup will guide you through:
-   - Installing Ollama (if needed)
-   - Downloading the required AI model
-   - Starting the Legal Assistant
+1. Edit the `.env` file and add your Gemini API key
+2. Run `start-app.bat` to start the application
+3. Open your browser to http://localhost:3000
 
 ### macOS/Linux Users
 
-1. Run `chmod +x setup-ollama.sh` to make the script executable
-2. Run `./setup-ollama.sh` to install Ollama and set up the model
-3. Follow the on-screen instructions
+1. Edit the `.env` file and add your Gemini API key
+2. Run `chmod +x start-app.sh` to make the script executable
+3. Run `./start-app.sh` to start the application
+4. Open your browser to http://localhost:3000
 
 ## Features
 
-- 🤖 AI-powered legal assistance using locally-run models
+- 🤖 AI-powered legal assistance using Google's Gemini API
 - 💬 Chat interface for legal questions and document creation
 - 📝 Document creation assistance
 - 📊 Document analysis capabilities
-- 🔒 Privacy-focused (all processing happens on your machine)
-- 💰 No usage fees or API costs
+- 🔐 Automatic fallback to OpenAI if Gemini is unavailable
+- 📒 Built-in legal knowledge base for offline use
 
 ## Detailed Installation
 
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v14 or higher)
-- [Ollama](https://ollama.ai/download) - For running AI models locally
+- [Gemini API Key](https://ai.google.dev/) - Get a key from Google AI Studio
 
-### Step 1: Install Ollama
+### Step 1: Get a Gemini API Key
 
-**IMPORTANT: You must install Ollama first!**
+1. Visit [Google AI Studio](https://ai.google.dev/)
+2. Sign in with your Google account
+3. Create a new API key
+4. Copy your API key
 
-1. Download Ollama from [ollama.ai/download](https://ollama.ai/download)
-2. Install and run Ollama
-3. After installation, run this command in your terminal:
-   ```bash
-   ollama pull mistral
-   ```
-   This will download the Mistral AI model (approx. 4GB)
-
-### Step 2: Setup the Legal Assistant
+### Step 2: Configure the Application
 
 1. Install dependencies:
    ```bash
    cd legal-assistant
    npm install
    ```
-2. Check that Ollama is properly connected:
-   ```bash
-   node diagnose-ollama.js
-   ```
-   Make sure it shows "Successfully connected to Ollama API server"
+2. Edit the `.env` file:
+   - Add your Gemini API key to `GEMINI_API_KEY=`
+   - (Optional) Adjust the model in `GEMINI_MODEL=`
 
 ## Running the Application
 
@@ -77,12 +68,11 @@ chmod +x start-app.sh
 
 ### Manual Start
 
-1. Make sure Ollama is running
-2. Start the server:
+1. Start the server:
    ```bash
    node server.js
    ```
-3. Open a browser and navigate to: http://localhost:3000
+2. Open a browser and navigate to: http://localhost:3000
 
 ## Usage
 
@@ -100,36 +90,18 @@ chmod +x start-app.sh
 
 If you encounter issues:
 
-1. **Run the automated setup**: 
-   - Windows: `setup-ollama.bat`
-   - macOS/Linux: `./setup-ollama.sh`
-
-2. Make sure Ollama is installed and running
-   - Download from: https://ollama.ai/download
-   - After installation, run: `ollama pull mistral`
-
-3. Run the diagnostic tool:
-   ```bash
-   node diagnose-ollama.js
-   ```
-   This will check your Ollama installation, connection, and model availability.
-
-4. See `ollama-setup.md` for detailed troubleshooting steps
-
-## Customizing the AI Model
-
-You can create specialized versions of language models for legal assistance:
-
-1. See the options in the `ollama-models` directory
-2. Create a custom model using the Modelfiles provided
-3. Update your `.env` file to use your custom model
+1. Check your Gemini API key is correctly set in the `.env` file
+2. Make sure the API key is valid and has not expired
+3. Check your internet connection
+4. If Gemini API is unavailable, the app will try to use OpenAI as a fallback
+5. If both APIs are unavailable, the app will use its built-in knowledge base
 
 ## Privacy and Data Usage
 
-All processing happens locally on your machine:
-- No data is sent to external APIs
-- No usage limits or costs
-- Your legal questions remain private
+When using the Gemini API:
+- Your queries are sent to Google's servers for processing
+- Google's data usage policies apply
+- For complete privacy, the application includes a fallback to a local knowledge base
 
 ## License
 

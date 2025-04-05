@@ -1,37 +1,29 @@
 @echo off
-echo Legal Assistant with Ollama Startup Script
+echo Legal Assistant with Gemini API Startup Script
 echo =========================================
 echo.
 
-REM Check if Ollama is running
-echo Checking if Ollama is running...
-curl -s http://localhost:11434/api/tags > nul
+echo Checking .env file for Gemini API key...
+findstr "GEMINI_API_KEY" .env | findstr /V "YOUR_GEMINI_API_KEY_HERE" > nul
 if %ERRORLEVEL% neq 0 (
-    echo Ollama does not appear to be running.
     echo.
-    echo Please make sure Ollama is installed and running.
+    echo Warning: Gemini API key not found in .env file or using default value.
+    echo For the Legal Assistant to work properly, you need to set a valid Gemini API key.
     echo.
-    echo If you haven't installed Ollama yet, run setup-ollama.bat first.
+    echo Please edit the .env file and set the GEMINI_API_KEY value.
     echo.
-    echo Press any key to exit...
-    pause > nul
-    exit /b 1
+    echo Would you like to continue anyway? (Y/N)
+    set /p continue=
+    if /i not "%continue%"=="Y" (
+        echo.
+        echo Exiting. Please set up your API key and try again.
+        echo.
+        pause
+        exit /b 1
+    )
 )
 
-REM Check if mistral model is installed
-echo Checking if Mistral model is installed...
-curl -s http://localhost:11434/api/tags | findstr mistral > nul
-if %ERRORLEVEL% neq 0 (
-    echo Mistral model is not installed.
-    echo.
-    echo Please run setup-ollama.bat to install the Mistral model.
-    echo.
-    echo Press any key to exit...
-    pause > nul
-    exit /b 1
-)
-
-echo Ollama is running! Starting Legal Assistant...
+echo Starting Legal Assistant...
 echo.
 echo NOTE: Keep this window open while using the Legal Assistant.
 echo Press Ctrl+C to stop the server when finished.

@@ -5,7 +5,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const cors = require('cors');
-const ollamaService = require('./ollama-service');
+const geminiService = require('./gemini-service');
 const config = require('./config');
 
 // Initialize express app
@@ -56,7 +56,7 @@ app.get('/', (req, res) => {
 app.post('/api/query', async (req, res) => {
     const { query, mode } = req.body;
     
-    // Handle history mode separately as it doesn't need Ollama
+    // Handle history mode separately as it doesn't need AI
     if (mode === 'history') {
         const historyResponse = {
             message: "Here are your previous conversations:",
@@ -73,14 +73,30 @@ app.post('/api/query', async (req, res) => {
     try {
         console.log(`Processing ${mode} query: "${query && query.substring(0, 50)}${query && query.length > 50 ? '...' : ''}"`);
         
-        // Process the query through Ollama
-        const response = await ollamaService.processQuery(query, mode);
+        // Process the query through Gemini API
+        let response;
+        let isFromFallback = false;
         
-        console.log('Ollama API response received successfully');
+        try {
+            // Try Gemini API
+            response = await geminiService.processQuery(query, mode);
+            console.log('Gemini API response received successfully');
+        } catch (geminiError) {
+            // Log the Gemini error
+            console.log('Gemini API error, using local knowledge base:', geminiError.message);
+            
+            // Use local knowledge base as fallback
+            response = generateFallbackResponse(query, mode);
+            isFromFallback = true;
+        }
         
         // Send the response with a slight delay for a more natural feel
         setTimeout(() => {
-            res.json({ response });
+            res.json({ 
+                response, 
+                isFallback: isFromFallback,
+                source: isFromFallback ? 'local' : 'gemini'
+            });
         }, 500);
     } catch (error) {
         console.error('Error processing query:', error);
@@ -92,7 +108,8 @@ app.post('/api/query', async (req, res) => {
             
             res.json({ 
                 response: fallbackResponse,
-                isFallback: true
+                isFallback: true,
+                source: 'local'
             });
         } else {
             // Otherwise return the error to the client
@@ -105,39 +122,56 @@ app.post('/api/query', async (req, res) => {
     }
 });
 
-// Endpoint to check Ollama connection
+// Endpoint to check API connection
 app.get('/api/health', async (req, res) => {
     try {
-        // Try to connect to the Ollama API
-        const response = await fetch(`${config.ollamaConfig.endpoint}/api/tags`);
-        const data = await response.json();
+        // Try to connect to the Gemini API - we'll just check if the API key exists
+        const hasGeminiKey = process.env.GEMINI_API_KEY && 
+                           process.env.GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE';
+        
+        // Do a simple ping test for the Gemini API
+        let geminiAvailable = false;
+        if (hasGeminiKey) {
+            try {
+                const testUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`;
+                const response = await fetch(testUrl);
+                geminiAvailable = response.ok;
+            } catch (error) {
+                console.error('Gemini API ping failed:', error);
+            }
+        }
         
         res.json({
-            status: 'ok',
+            status: (hasGeminiKey && geminiAvailable) ? 'ok' : 'warning',
             timestamp: new Date().toISOString(),
             server: 'Legal Assistant API',
-            version: '1.0.2',
-            ollama: {
-                connected: true,
-                models: data.models ? data.models.map(m => m.name) : []
-            }
+            version: process.env.APP_VERSION || '1.0.0',
+            gemini: {
+                configured: hasGeminiKey,
+                available: geminiAvailable,
+                model: process.env.GEMINI_MODEL || 'gemini-pro'
+            },
+            localFallback: {
+                enabled: config.fallbackEnabled,
+                knowledgeBaseSize: Object.keys(legalKnowledgeBase).length
+            },
+            message: (hasGeminiKey && geminiAvailable) ? 
+                   'API is properly configured' : 
+                   'Gemini API is not available. Please check your API key and internet connection.'
         });
     } catch (error) {
         res.json({
-            status: 'warning',
+            status: 'error',
             timestamp: new Date().toISOString(),
             server: 'Legal Assistant API',
-            version: '1.0.2',
-            ollama: {
-                connected: false,
-                error: error.message
-            },
-            message: 'Ollama connection failed. Using fallback responses.'
+            version: process.env.APP_VERSION || '1.0.0',
+            error: error.message,
+            message: 'Error checking API status. Using fallback responses.'
         });
     }
 });
 
-// Function to generate a fallback response if Ollama fails
+// Function to generate a fallback response if AI services fail
 function generateFallbackResponse(query, mode) {
     query = (query || '').toLowerCase();
     
@@ -167,7 +201,7 @@ const server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Open your browser and navigate to: http://localhost:${PORT}`);
     console.log(`API Health check: http://localhost:${PORT}/api/health`);
-    console.log(`Make sure Ollama is running locally at: ${config.ollamaConfig.endpoint}`);
+    console.log(`Make sure to set your Gemini API key in the .env file`);
 }).on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
         console.error(`Port ${PORT} is already in use. Trying port ${PORT + 1}...`);
@@ -176,7 +210,7 @@ const server = app.listen(PORT, () => {
             console.log(`Server is now running on port ${newPort}`);
             console.log(`Open your browser and navigate to: http://localhost:${newPort}`);
             console.log(`API Health check: http://localhost:${newPort}/api/health`);
-            console.log(`Make sure Ollama is running locally at: ${config.ollamaConfig.endpoint}`);
+            console.log(`Make sure to set your Gemini API key in the .env file`);
         });
     } else {
         console.error('Server error:', err);
