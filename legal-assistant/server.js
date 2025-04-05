@@ -2,6 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const cors = require('cors');
+const openaiService = require('./openai-service');
+const config = require('./config');
 
 // Initialize express app
 const app = express();
@@ -12,7 +14,7 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, './')));
 
-// Legal assistant responses database (mock)
+// Legal assistant responses database (mock) - kept for fallback scenarios
 const legalKnowledgeBase = {
     // General legal terms and concepts
     'contract': 'A contract is a legally binding agreement between two or more parties. For a contract to be valid, it typically requires an offer, acceptance, consideration, and the intention to create legal relations.',
@@ -48,45 +50,71 @@ app.get('/', (req, res) => {
 });
 
 // API route to handle legal queries
-app.post('/api/query', (req, res) => {
+app.post('/api/query', async (req, res) => {
     const { query, mode } = req.body;
     
-    let response = '';
-    
-    switch(mode) {
-        case 'new-chat':
-        case 'custom-query':
-            response = generateLegalResponse(query);
-            break;
-        case 'create-docs':
-            response = generateDocumentCreationResponse(query);
-            break;
-        case 'analyse-docs':
-            response = generateDocumentAnalysisResponse(query);
-            break;
-        case 'history':
-            response = {
-                message: "Here are your previous conversations:",
-                history: [
-                    { id: 1, date: '2023-04-15', topic: 'Contract Review' },
-                    { id: 2, date: '2023-04-10', topic: 'Trademark Registration' },
-                    { id: 3, date: '2023-03-28', topic: 'Legal Consultation' }
-                ]
-            };
-            break;
-        default:
-            response = "I'm not sure how to help with that. Could you try a different question?";
+    // Handle history mode separately as it doesn't need OpenAI
+    if (mode === 'history') {
+        const historyResponse = {
+            message: "Here are your previous conversations:",
+            history: [
+                { id: 1, date: '2023-04-15', topic: 'Contract Review' },
+                { id: 2, date: '2023-04-10', topic: 'Trademark Registration' },
+                { id: 3, date: '2023-03-28', topic: 'Legal Consultation' }
+            ]
+        };
+        
+        return res.json({ response: historyResponse });
     }
     
-    // Simulate delay for a more realistic response
-    setTimeout(() => {
-        res.json({ response });
-    }, 500);
+    try {
+        console.log(`Processing ${mode} query: "${query && query.substring(0, 50)}${query && query.length > 50 ? '...' : ''}"`);
+        
+        // Process the query through OpenAI
+        const response = await openaiService.processQuery(query, mode);
+        
+        console.log('OpenAI API response received successfully');
+        
+        // Send the response with a slight delay for a more natural feel
+        setTimeout(() => {
+            res.json({ response });
+        }, 500);
+    } catch (error) {
+        console.error('Error processing query:', error);
+        
+        // If fallback is enabled, use local knowledge base
+        if (config.fallbackEnabled) {
+            console.log('Using fallback response system');
+            let fallbackResponse = generateFallbackResponse(query, mode);
+            
+            res.json({ 
+                response: fallbackResponse,
+                isFallback: true
+            });
+        } else {
+            // Otherwise return the error to the client
+            res.status(500).json({
+                response: "I apologize, but I encountered an error processing your request. Please try again later.",
+                error: error.message,
+                isFallback: false
+            });
+        }
+    }
 });
 
-// Function to generate a response to a legal query
-function generateLegalResponse(query) {
-    query = query.toLowerCase();
+// Endpoint to check API connection
+app.get('/api/health', async (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        server: 'Legal Assistant API',
+        version: '1.0.1'
+    });
+});
+
+// Function to generate a fallback response if OpenAI fails
+function generateFallbackResponse(query, mode) {
+    query = (query || '').toLowerCase();
     
     // Check if any keywords in our knowledge base match the query
     for (const [keyword, response] of Object.entries(legalKnowledgeBase)) {
@@ -95,24 +123,25 @@ function generateLegalResponse(query) {
         }
     }
     
-    // Default response if no match found
-    return "That's an interesting legal question. In most jurisdictions, legal matters can be complex and often depend on specific details of your situation. Would you like me to provide general information about this topic, or would you prefer to consult with a licensed attorney for specific legal advice?";
-}
-
-// Function to generate a response for document creation
-function generateDocumentCreationResponse(query) {
-    return "I'd be happy to help you create a legal document. Please note that while I can provide templates and guidance, these documents should be reviewed by a qualified legal professional before use. What specific details would you like to include in the document?";
-}
-
-// Function to generate a response for document analysis
-function generateDocumentAnalysisResponse(query) {
-    return "I'd be glad to analyze a legal document for you. Please note that this analysis is for informational purposes only and doesn't constitute legal advice. Could you provide more details about the document or upload it for review?";
+    // Default responses based on mode
+    switch(mode) {
+        case 'new-chat':
+        case 'custom-query':
+            return "I understand you have a legal question. However, I'm having trouble connecting to my knowledge base at the moment. Could you try again later or rephrase your question?";
+        case 'create-docs':
+            return "I'd be happy to help you create a legal document. However, I'm having trouble accessing my templates at the moment. Could you try again later or provide more details about what you're looking to create?";
+        case 'analyse-docs':
+            return "I'd be glad to analyze a legal document for you. However, I'm having trouble connecting to my analysis tools at the moment. Could you try again later or provide more details about the document you'd like analyzed?";
+        default:
+            return "I'm having trouble processing your request at the moment. Could you try again later?";
+    }
 }
 
 // Start the server with error handling
 const server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Open your browser and navigate to: http://localhost:${PORT}`);
+    console.log(`API Health check: http://localhost:${PORT}/api/health`);
 }).on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
         console.error(`Port ${PORT} is already in use. Trying port ${PORT + 1}...`);
@@ -120,6 +149,7 @@ const server = app.listen(PORT, () => {
             const newPort = newServer.address().port;
             console.log(`Server is now running on port ${newPort}`);
             console.log(`Open your browser and navigate to: http://localhost:${newPort}`);
+            console.log(`API Health check: http://localhost:${newPort}/api/health`);
         });
     } else {
         console.error('Server error:', err);

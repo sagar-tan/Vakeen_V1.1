@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Current active mode
     let currentMode = 'custom-query';
+    
+    // Chat history storage (simple in-memory storage for demo)
+    let sessionHistory = [];
 
     // Initialize
     initializeApp();
@@ -75,6 +78,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Add assistant message
         addAssistantMessage(welcomeMessage);
+        
+        // Also reset the session history if we're not in history mode
+        if (mode !== 'history') {
+            sessionHistory = [];
+        }
     }
 
     function handleUserMessage() {
@@ -83,6 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Add user message to chat
         addUserMessage(message);
+        
+        // Save to session history
+        sessionHistory.push({ role: 'user', content: message });
         
         // Clear input
         userInput.value = '';
@@ -114,12 +125,20 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 // Add assistant message
                 addAssistantMessage(data.response);
+                
+                // Save to session history
+                sessionHistory.push({ role: 'assistant', content: data.response });
+                
+                // If this is a fallback response, show an indication
+                if (data.isFallback) {
+                    addSystemMessage("Note: I'm currently using my local knowledge base due to connectivity issues.");
+                }
             }
         })
         .catch(error => {
             console.error('Error:', error);
             removeTypingIndicator();
-            addAssistantMessage("I'm sorry, there was an error processing your request. Please ensure the server is running and try again.");
+            addSystemMessage("I'm sorry, there was an error connecting to the server. Please ensure the server is running at " + BASE_URL);
         });
     }
 
@@ -127,7 +146,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show typing indicator
         showTypingIndicator();
         
-        // Make API request to fetch chat history
+        // If we have session history, display that instead of making an API call
+        if (sessionHistory.length > 0) {
+            removeTypingIndicator();
+            displayLocalSessionHistory();
+            return;
+        }
+        
+        // Otherwise make API request to fetch chat history
         fetch(API_URL, {
             method: 'POST',
             headers: {
@@ -150,8 +176,43 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(error => {
             console.error('Error:', error);
             removeTypingIndicator();
-            addAssistantMessage("I'm sorry, there was an error connecting to the server. Please ensure the server is running at " + BASE_URL);
+            addSystemMessage("I'm sorry, there was an error connecting to the server. Please ensure the server is running at " + BASE_URL);
         });
+    }
+
+    function displayLocalSessionHistory() {
+        // Group messages by conversation
+        const conversation = {
+            id: 1,
+            date: new Date().toISOString().split('T')[0],
+            topic: 'Current Session',
+            messages: sessionHistory
+        };
+        
+        // Create HTML element to display
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('chat-message', 'assistant');
+        
+        // Create messages HTML
+        const messagesHTML = sessionHistory.map(msg => {
+            const roleClass = msg.role === 'user' ? 'user-history-msg' : 'assistant-history-msg';
+            return `<div class="history-message ${roleClass}">
+                <strong>${msg.role === 'user' ? 'You' : 'Assistant'}:</strong>
+                <p>${formatMessage(msg.content)}</p>
+            </div>`;
+        }).join('');
+        
+        messageElement.innerHTML = `
+            <div class="message-content">
+                <p>Current Session:</p>
+                <div class="history-messages">
+                    ${messagesHTML}
+                </div>
+            </div>
+        `;
+        
+        chatHistory.appendChild(messageElement);
+        scrollToBottom();
     }
 
     function addUserMessage(message) {
@@ -172,6 +233,18 @@ document.addEventListener('DOMContentLoaded', () => {
         messageElement.innerHTML = `
             <div class="message-content">
                 <p>${formatMessage(message)}</p>
+            </div>
+        `;
+        chatHistory.appendChild(messageElement);
+        scrollToBottom();
+    }
+    
+    function addSystemMessage(message) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('chat-message', 'system');
+        messageElement.innerHTML = `
+            <div class="message-content">
+                <p><i>${formatMessage(message)}</i></p>
             </div>
         `;
         chatHistory.appendChild(messageElement);
@@ -236,8 +309,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function formatMessage(message) {
+        // For objects (like history items)
+        if (typeof message !== 'string') {
+            return JSON.stringify(message);
+        }
+        
+        // Format links
+        message = message.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+        
         // Replace line breaks with <br> tags
-        return typeof message === 'string' ? message.replace(/\n/g, '<br>') : message;
+        return message.replace(/\n/g, '<br>');
     }
 
     function scrollToBottom() {
