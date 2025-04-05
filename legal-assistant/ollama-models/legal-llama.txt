@@ -1,4 +1,4 @@
-FROM llama3
+FROM llama2
 
 # Legal Assistant specialization
 SYSTEM """

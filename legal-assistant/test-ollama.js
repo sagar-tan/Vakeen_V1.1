@@ -3,7 +3,7 @@ require('dotenv').config();
 
 // Get configuration from .env or use defaults
 const OLLAMA_ENDPOINT = process.env.OLLAMA_ENDPOINT || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama2';
 
 console.log('Ollama Test Tool');
 console.log('================');

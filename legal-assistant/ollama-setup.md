@@ -28,16 +28,16 @@ Ollama provides a simple way to run powerful large language models (like Llama) 
 curl -fsSL https://ollama.ai/install.sh | sh
 ```
 
-### Step 2: Download the Llama3 Model
+### Step 2: Download the Llama2 Model
 
 Once Ollama is installed, open a terminal/command prompt and run:
 
 ```bash
-ollama pull llama3
+ollama pull llama2
 ```
 
-This will download the Llama3 model (~4GB). You can also try smaller models:
-- `ollama pull llama3:8b` (smaller version)
+This will download the Llama2 model (~4GB). You can also try smaller models:
+- `ollama pull llama2:7b` (smaller version)
 - `ollama pull mistral` (alternative model if Llama is too resource-intensive)
 
 ### Step 3: Test Ollama
@@ -45,7 +45,7 @@ This will download the Llama3 model (~4GB). You can also try smaller models:
 Verify Ollama is working by running:
 
 ```bash
-ollama run llama3 "What is a legal contract?"
+ollama run llama2 "What is a legal contract?"
 ```
 
 You should see a detailed response about legal contracts.
@@ -56,7 +56,7 @@ The Legal Assistant app is already configured to use Ollama with the following s
 
 ```
 OLLAMA_ENDPOINT=http://localhost:11434
-OLLAMA_MODEL=llama3
+OLLAMA_MODEL=llama2
 ```
 
 If you installed a different model, update the `OLLAMA_MODEL` value to match that model name.
@@ -90,8 +90,8 @@ If you see "Ollama is not running or not connected" in the Legal Assistant:
 ### Hardware Requirements
 
 Llama models require significant resources:
-- **llama3**: 8GB+ RAM recommended
-- **llama3:8b**: 4GB+ RAM
+- **llama2**: 8GB+ RAM recommended
+- **llama2:7b**: 4GB+ RAM
 - **mistral**: 4GB+ RAM
 
 If your system struggles, try a smaller model and update the `.env` file accordingly.
@@ -105,4 +105,4 @@ To use a different model:
 
 ## Available Models
 
-Visit [Ollama Library](https://ollama.ai/library) for a list of available models. 
+Run `ollama list` to see available models on your system, or visit [Ollama Library](https://ollama.ai/library) for a list of available models you can download. 

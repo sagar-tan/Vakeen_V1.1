@@ -64,10 +64,10 @@ async function processQuery(query, mode) {
         } else if (error.request) {
             // Request was made but no response received
             console.error('No response received:', error.request);
-            return "I apologize, but I didn't receive a response from my knowledge service. Please ensure Ollama is running on your machine.";
+            return "No response received from Ollama. Please make sure the model is downloaded using 'ollama pull llama2' or check that Ollama is running properly.";
         } else {
             // Something else caused the error
-            return "I apologize, but I encountered an error processing your request. Please check if Ollama is properly installed and running.";
+            return "Error connecting to Ollama. Please ensure Ollama is installed and the correct model is downloaded. See ollama-setup.md for instructions.";
         }
     }
 }
